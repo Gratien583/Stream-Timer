@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>設定</title>
+    <style>
+      body {
+        background-color: #1e1e2e;
+        color: #fff;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #settings-container {
+        width: 40%;
+        background: #2a2a40;
+        box-sizing: border-box;
+        overflow-y: auto;
+        padding: 20px;
+        overflow: hidden;
+      }
+      h1 {
+        text-align: center;
+        font-size: 22px;
+        color: #fff;
+      }
+      .form-group {
+        margin: 10px;
+      }
+      label {
+        font-size: 14px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+        color: #fff;
+      }
+      input[type="text"],
+      input[type="time"],
+      input[type="file"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        background-color: #333;
+        color: #fff;
+        margin: 0 10px;
+      }
+      #image-preview,
+      #bg-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 10px;
+      }
+      .image-container {
+        position: relative;
+        width: 100px;
+        height: 56px;
+        overflow: hidden;
+        border-radius: 5px;
+        border: 2px solid #555;
+      }
+      .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 5px;
+      }
+      .delete-btn {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        color: red;
+        font-size: 18px;
+        font-weight: bold;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+      }
+
+      button {
+        width: calc(100% - 20px);
+        padding: 12px;
+        background: linear-gradient(45deg, #ffff, #ddd);
+        color: #222;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 10px;
+      }
+      #preview-container {
+        width: 60%;
+        background: #222;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      h2 {
+        text-align: center;
+        font-size: 20px;
+        color: #fff;
+      }
+      .preview-wrapper {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%;
+      }
+      iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+      .preview-link {
+        display: block;
+        text-align: center;
+        background: linear-gradient(45deg, #4caf50, #45a049);
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        text-decoration: none;
+        padding: 12px;
+        border-radius: 4px;
+        margin: 10px auto;
+        width: calc(100% - 20px);
+        text-align: center;
+      }
+      .preview-link:hover {
+        background: linear-gradient(45deg, #45a049, #388e3c);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="settings-container">
+      <h1>設定</h1>
+
+      <div class="form-group">
+        <label for="bg-file">背景画像</label>
+        <input type="file" id="bg-file" accept="image/*" />
+        <div id="bg-preview"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="match-title">タイトル</label>
+        <input
+          type="text"
+          id="match-title"
+          placeholder="大会名や試合情報を入力"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="title-color">タイトルの文字色</label>
+        <input type="color" id="title-color" value="#ffffff" />
+      </div>
+
+      <div class="form-group">
+        <label for="match-detail">詳細</label>
+        <input type="text" id="match-detail" placeholder="試合の詳細を入力" />
+      </div>
+
+      <div class="form-group">
+        <label for="detail-color">詳細の文字色</label>
+        <input type="color" id="detail-color" value="#ffffff" />
+      </div>
+
+      <div class="form-group">
+        <label for="start-time">配信開始時間</label>
+        <input type="time" id="start-time" />
+      </div>
+
+      <div class="form-group">
+        <label for="time-color">配信開始時間の文字色</label>
+        <input type="color" id="time-color" value="#ffffff" />
+      </div>
+
+      <div class="form-group">
+        <label for="slide-images">スライドショー画像</label>
+        <input type="file" id="slide-images" multiple accept="image/*" />
+      </div>
+
+      <div id="image-preview"></div>
+
+      <button onclick="saveSettings()">設定を保存</button>
+
+      <a href="esports_waiting.html" target="_blank" class="preview-link"
+        >プレビューページ</a
+      >
+    </div>
+
+    <div id="preview-container">
+      <h2>プレビュー</h2>
+      <div class="preview-wrapper">
+        <iframe id="preview-frame" src="esports_waiting.html"></iframe>
+      </div>
+    </div>
+
+    <script>
+      async function loadSettings() {
+        let response = await fetch("/get-settings");
+        if (response.ok) {
+          let settings = await response.json();
+          document.getElementById("match-title").value =
+            settings.matchTitle || "";
+          document.getElementById("match-detail").value =
+            settings.matchDetail || "";
+          document.getElementById("start-time").value =
+            settings.startTime || "";
+          displayBackgroundPreview(settings.bgUrl || "");
+          displaySlideImages(settings.slideImages || []);
+          document.getElementById("title-color").value =
+            settings.titleColor || "#ffffff";
+          document.getElementById("detail-color").value =
+            settings.detailColor || "#ffffff";
+          document.getElementById("time-color").value =
+            settings.timeColor || "#ffffff";
+        }
+      }
+
+      async function saveSettings() {
+        let response = await fetch("/get-settings");
+        let existingSettings = response.ok ? await response.json() : {};
+
+        let settings = {
+          matchTitle: document.getElementById("match-title").value,
+          matchDetail: document.getElementById("match-detail").value,
+          startTime: document.getElementById("start-time").value,
+          slideImages: existingSettings.slideImages || [],
+          bgUrl: existingSettings.bgUrl || "",
+
+          titleColor: document.getElementById("title-color").value,
+          detailColor: document.getElementById("detail-color").value,
+          timeColor: document.getElementById("time-color").value,
+        };
+
+        //背景画像の処理
+        let bgFile = document.getElementById("bg-file").files[0];
+        if (bgFile) {
+          let imageUrl = await uploadImage(bgFile);
+          if (imageUrl) {
+            settings.bgUrl = imageUrl;
+          }
+        }
+
+        //スライドショー画像の処理
+        let slideFiles = document.getElementById("slide-images").files;
+        if (slideFiles.length > 0) {
+          let uploadedImages = await uploadMultipleImages(slideFiles);
+          settings.slideImages = [...settings.slideImages, ...uploadedImages];
+        }
+
+        //設定をサーバーに保存
+        await fetch("/save-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(settings),
+        });
+
+        alert("設定を保存しました！");
+        loadSettings();
+      }
+
+      async function uploadImage(file) {
+        let formData = new FormData();
+        formData.append("image", file);
+        let response = await fetch("/upload-image", {
+          method: "POST",
+          body: formData,
+        });
+        if (response.ok) {
+          let data = await response.json();
+          return data.imageUrl;
+        }
+        return null;
+      }
+
+      async function uploadMultipleImages(files) {
+        let imageUrls = [];
+        for (let file of files) {
+          let imageUrl = await uploadImage(file);
+          if (imageUrl) {
+            imageUrls.push(imageUrl);
+          }
+        }
+        return imageUrls;
+      }
+
+      function displayBackgroundPreview(bgUrl) {
+        let bgPreview = document.getElementById("bg-preview");
+        bgPreview.innerHTML = "";
+        if (bgUrl) {
+          let container = document.createElement("div");
+          container.classList.add("image-container");
+
+          let img = document.createElement("img");
+          img.src = bgUrl;
+          img.style.width = "100px";
+          img.style.height = "56px";
+
+          let deleteBtn = document.createElement("button");
+          deleteBtn.className = "delete-btn";
+          deleteBtn.innerText = "×";
+          deleteBtn.onclick = async function () {
+            if (!confirm("背景画像を削除しますか？")) return;
+
+            await fetch("/delete-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ imageUrl: bgUrl }),
+            });
+
+            let response = await fetch("/get-settings");
+            let settings = response.ok ? await response.json() : {};
+            settings.bgUrl = "";
+
+            await fetch("/save-settings", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(settings),
+            });
+
+            loadSettings();
+          };
+
+          container.appendChild(img);
+          container.appendChild(deleteBtn);
+          bgPreview.appendChild(container);
+        }
+      }
+
+      function displaySlideImages(slideImages) {
+        let preview = document.getElementById("image-preview");
+        preview.innerHTML = "";
+        slideImages.forEach((src, index) => {
+          let container = document.createElement("div");
+          container.classList.add("image-container");
+
+          let img = document.createElement("img");
+          img.src = src;
+
+          let deleteBtn = document.createElement("button");
+          deleteBtn.className = "delete-btn";
+          deleteBtn.innerText = "×";
+          deleteBtn.onclick = async function () {
+            if (!confirm("この画像を削除しますか？")) return;
+
+            await fetch("/delete-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ imageUrl: src }),
+            });
+
+            let response = await fetch("/get-settings");
+            let settings = response.ok ? await response.json() : {};
+            settings.slideImages.splice(index, 1);
+
+            await fetch("/save-settings", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(settings),
+            });
+
+            displaySlideImages(settings.slideImages);
+          };
+
+          container.appendChild(img);
+          container.appendChild(deleteBtn);
+          preview.appendChild(container);
+        });
+      }
+
+      window.onload = loadSettings;
+    </script>
+  </body>
+</html>

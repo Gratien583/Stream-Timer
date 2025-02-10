@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>待機画面</title>
+    <style>
+      @keyframes gradientMove {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "Orbitron", sans-serif;
+        color: #fff;
+        overflow: hidden;
+        background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+        background-size: 300% 300%;
+        animation: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .background-effect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: -2;
+      }
+
+      .particle {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        animation: moveParticles 10s linear infinite;
+      }
+
+      @keyframes moveParticles {
+        from {
+          transform: translateY(100vh) translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateY(-10vh) translateX(10vw);
+          opacity: 0;
+        }
+      }
+
+      #timer {
+        position: absolute;
+        top: 5%;
+        left: 5%;
+        font-size: 6vw;
+        font-weight: bold;
+      }
+
+      #match-info {
+        position: absolute;
+        top: 5%;
+        right: 5%;
+        font-size: 2vw;
+        text-align: right;
+      }
+
+      #slideshow-container {
+        position: absolute;
+        bottom: 3%;
+        left: 3%;
+        width: 50vw;
+        height: 15vw;
+        overflow: hidden;
+        border-radius: 10px;
+        border: 2px solid #fff;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .slide {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition: opacity 1.5s ease-in-out;
+        background-size: cover;
+        background-position: center;
+      }
+
+      .active {
+        opacity: 1 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 背景アニメーション -->
+    <div class="background-effect" id="particle-container"></div>
+
+    <!-- カウントダウンタイマー -->
+    <div id="timer">00:00:00</div>
+
+    <!-- 試合情報エリア -->
+    <div id="match-info">
+      <h2 id="match-title">タイトル</h2>
+      <p id="match-detail"></p>
+    </div>
+
+    <!-- スライドショー -->
+    <div id="slideshow-container"></div>
+
+    <script>
+      let slideshowInterval;
+
+      async function loadSettings() {
+        try {
+          let response = await fetch("/get-settings");
+          if (!response.ok) throw new Error("設定データの取得に失敗しました");
+
+          let settings = await response.json();
+          console.log("🚀 サーバーから設定データをロード:", settings);
+
+          // 背景画像の適用
+          applyBackground(settings.bgUrl);
+
+          //試合情報の更新
+          document.getElementById("match-title").innerText =
+            settings.matchTitle || "タイトル";
+          document.getElementById("match-detail").innerText =
+            settings.matchDetail || "";
+
+          //カウントダウンタイマーの更新
+          updateTimer(settings.startTime || "00:00");
+
+          //スライドショーの更新
+          updateSlideshow(settings.slideImages || []);
+
+          //文字色の適用（新規追加）
+          if (settings.titleColor) {
+            document.getElementById("match-title").style.color =
+              settings.titleColor;
+          }
+          if (settings.detailColor) {
+            document.getElementById("match-detail").style.color =
+              settings.detailColor;
+          }
+          if (settings.timeColor) {
+            document.getElementById("timer").style.color = settings.timeColor;
+          }
+        } catch (error) {
+          console.error("設定データのロードに失敗:", error);
+        }
+      }
+
+      // 背景画像を適用
+      function applyBackground(bgUrl) {
+        let existingBackground = document.getElementById("background-element");
+        let particleContainer = document.getElementById("particle-container");
+
+        if (bgUrl) {
+          console.log("背景画像を適用:", bgUrl);
+
+          // パーティクルエフェクトを削除
+          if (particleContainer) particleContainer.remove();
+          if (existingBackground) existingBackground.remove();
+
+          let isVideo =
+            bgUrl.endsWith(".mp4") || bgUrl.startsWith("data:video/");
+
+          if (isVideo) {
+            let backgroundElement = document.createElement("video");
+            backgroundElement.id = "background-element";
+            backgroundElement.src = bgUrl;
+            backgroundElement.style.position = "absolute";
+            backgroundElement.style.top = "0";
+            backgroundElement.style.left = "0";
+            backgroundElement.style.width = "100%";
+            backgroundElement.style.height = "100%";
+            backgroundElement.style.objectFit = "cover";
+            backgroundElement.style.zIndex = "-1";
+            backgroundElement.autoplay = true;
+            backgroundElement.loop = true;
+            backgroundElement.muted = true;
+            document.body.insertBefore(
+              backgroundElement,
+              document.body.firstChild
+            );
+          } else {
+            document.body.style.background = `url(${bgUrl}) no-repeat center center fixed`;
+            document.body.style.backgroundSize = "cover";
+          }
+        } else {
+          console.log(
+            "背景画像が未設定のため、パーティクルエフェクトを適用"
+          );
+          if (!particleContainer) {
+            let newParticleContainer = document.createElement("div");
+            newParticleContainer.id = "particle-container";
+            newParticleContainer.classList.add("background-effect");
+            document.body.insertBefore(
+              newParticleContainer,
+              document.body.firstChild
+            );
+            createParticleEffect();
+          }
+        }
+      }
+
+      // カウントダウンタイマーの更新
+      function updateTimer(startTime) {
+        function update() {
+          let now = new Date();
+          let start = new Date();
+          let [hours, minutes] = startTime.split(":").map(Number);
+          start.setHours(hours, minutes, 0, 0);
+          let diff = Math.floor((start - now) / 1000);
+
+          let h = Math.max(Math.floor(diff / 3600), 0);
+          let m = Math.max(Math.floor((diff % 3600) / 60), 0);
+          let s = Math.max(diff % 60, 0);
+
+          document.getElementById("timer").innerText = `${String(h).padStart(
+            2,
+            "0"
+          )}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+          setTimeout(update, 1000);
+        }
+        update();
+      }
+
+      // スライドショーの更新
+      function updateSlideshow(slideImages) {
+        let slideshowContainer = document.getElementById("slideshow-container");
+        slideshowContainer.innerHTML = "";
+
+        if (slideImages.length === 0) {
+          console.warn("⚠ スライドショー画像が設定されていません");
+          return;
+        }
+
+        console.log("📸 スライドショー画像リスト:", slideImages);
+
+        slideImages.forEach((src, index) => {
+          let slide = document.createElement("div");
+          slide.classList.add("slide");
+          slide.style.backgroundImage = `url(${src})`;
+          if (index === 0) slide.classList.add("active");
+          slideshowContainer.appendChild(slide);
+        });
+
+        let slides = document.querySelectorAll(".slide");
+        let currentSlide = 0;
+
+        function changeSlide() {
+          slides[currentSlide].classList.remove("active");
+          currentSlide = (currentSlide + 1) % slides.length;
+          slides[currentSlide].classList.add("active");
+        }
+
+        clearInterval(slideshowInterval);
+        slideshowInterval = setInterval(changeSlide, 5000);
+      }
+
+      // パーティクルエフェクトの作成
+      function createParticleEffect() {
+        const particleContainer = document.getElementById("particle-container");
+        for (let i = 0; i < 50; i++) {
+          let particle = document.createElement("div");
+          particle.classList.add("particle");
+          particle.style.left = `${Math.random() * 100}vw`;
+          particle.style.animationDuration = `${Math.random() * 5 + 5}s`;
+          particleContainer.appendChild(particle);
+        }
+      }
+
+      // 設定データのロード
+      loadSettings();
+    </script>
+  </body>
+</html>
