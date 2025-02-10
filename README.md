@@ -31,11 +31,12 @@
 ## 📸 画面
 
 ### 待機画面
-![待機画面]()<img width="1675" alt="2" src="https://github.com/user-attachments/assets/144778ff-a4d6-44f9-85eb-0add93f52a10" />
+<img width="1675" alt="2" src="https://github.com/user-attachments/assets/144778ff-a4d6-44f9-85eb-0add93f52a10" />
 
 
 ### 設定画面
-![設定画面](<img width="1680" alt="スクリーンショット 2025-02-10 16 55 02" src="https://github.com/user-attachments/assets/1de5ee19-b0f1-4db3-8644-be65225a01aa" />)
+<img width="1680" alt="1" src="https://github.com/user-attachments/assets/10b67e79-8573-4c03-95fc-ffdff4cf8c8e" />
+
 
 ## ⏳ セットアップ手順
 
